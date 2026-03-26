@@ -1,7 +1,7 @@
 // service-worker.js
 
 // Importa a versão do config.js
-const APP_VERSION = "1.0.3"; 
+const APP_VERSION = "1.0.6"; 
 
 const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const BASE_PATH = isDev ? '/' : '/wordhunt/';

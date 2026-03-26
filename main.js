@@ -20,7 +20,7 @@ const overlay = document.getElementById("overlay");
 // ===============================
 
 overlay.addEventListener("click", () => {
-  overlay.style.display = "none";
+  overlay.remove();
 });
 
 // ===============================
