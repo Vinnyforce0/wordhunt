@@ -1,0 +1,26 @@
+{
+  "name": "WordHunt",
+  "short_name": "wordhunt",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "description": "nenhuma descrição",
+  "icons": [
+    {
+      "src": "assets/textures/floor.jpg",
+      "sizes": "128x128",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/icons/laser.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/textures/sky.jpg",
+      "sizes": "1123x794",
+      "type": "image/jpeg"
+    }
+  ]
+}
