@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Jogo 3D</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#000000">
+</head>
+
+<body> <!-- Tela inicial simples -->
+    <div id="overlay">
+        <h1>Meu Jogo 3D</h1>
+        <p>Clique para começar</p>
+    </div> <!-- Script principal -->
+    <script type="module" src="main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    reg.update(); // força buscar a versão mais recente do SW
+                    console.log("Tentando atualizar o Service Worker...");
+                }
+            });
+        }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                    .then(reg => console.log('Service Worker registrado!', reg))
+                    .catch(err => console.log('Falha no registro do SW', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
