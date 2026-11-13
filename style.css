@@ -2,20 +2,305 @@ body {
   margin: 0;
   overflow: hidden;
   font-family: Arial, sans-serif;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
 }
 
 #overlay {
   position: absolute;
+  inset: 0;
   width: 100%;
-  height: 100%;
-  background: black;
+  background: rgb(0 0 0 / 82%);
   color: white;
 
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
 
-  cursor: pointer;
   z-index: 10;
+}
+
+#overlay[hidden],
+#loading-panel[hidden],
+#menu-panel[hidden],
+#settings-panel[hidden] {
+  display: none;
+}
+
+#loading-panel,
+#menu-panel,
+#settings-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+}
+
+#loading-panel progress {
+  width: min(360px, 75vw);
+  height: 12px;
+  accent-color: #71b557;
+}
+
+#loading-warning {
+  color: #ffd27a;
+}
+
+#overlay button {
+  min-width: 180px;
+  padding: 10px 18px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 12%);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+#settings-panel input {
+  width: 18px;
+  height: 18px;
+  accent-color: #71b557;
+}
+
+#debug-hud[hidden],
+#interact-button[hidden],
+#menu-button[hidden] {
+  display: none;
+}
+
+#menu-button {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  z-index: 8;
+  padding: 6px 12px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 16px;
+  background: rgb(0 0 0 / 55%);
+  color: white;
+  font-size: 14px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+#debug-button {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  z-index: 8;
+  padding: 6px 12px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 16px;
+  background: rgb(0 0 0 / 55%);
+  color: white;
+  font-size: 14px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+#debug-hud {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 54px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  z-index: 8;
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 70%);
+  color: white;
+  font: 13px/1.3 monospace;
+  pointer-events: none;
+}
+
+#dialogue-bubble {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  z-index: 6;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: min(640px, 90vw);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(100% + 24px));
+  transition: transform 320ms ease, opacity 240ms ease;
+}
+
+#dialogue-bubble.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#dialogue-avatar,
+#dialogue-text-panel {
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 42%);
+}
+
+#dialogue-avatar {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.88;
+}
+
+#dialogue-text-panel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  min-height: 72px;
+  padding: 10px 14px;
+  color: white;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+#dialogue-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+#touch-controls[hidden] {
+  display: none;
+}
+
+#touch-controls.conversation-active #look-zone,
+#touch-controls.conversation-active #move-pad,
+#touch-controls.conversation-active #jump-button {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#touch-controls {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#look-zone {
+  position: absolute;
+  inset: 0 0 0 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#move-pad {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  left: calc(env(safe-area-inset-left, 0px) + 24px);
+  width: 140px;
+  height: 140px;
+  pointer-events: auto;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 35%);
+  backdrop-filter: blur(3px);
+  touch-action: none;
+}
+
+#jump-button {
+  position: absolute;
+  right: calc(env(safe-area-inset-right, 0px) + 24px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+  width: 76px;
+  height: 76px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 45%);
+  color: white;
+  font-size: 14px;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#interact-button {
+  position: absolute;
+  right: calc(env(safe-area-inset-right, 0px) + 42px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
+  min-width: 76px;
+  height: 48px;
+  padding: 0 10px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 24px;
+  background: rgb(0 0 0 / 55%);
+  color: white;
+  font-size: 13px;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#move-stick {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 35%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  #dialogue-bubble {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 180px);
+    gap: 8px;
+    width: 90vw;
+  }
+
+  #dialogue-avatar {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  #dialogue-text-panel {
+    min-height: 52px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  #move-pad {
+    width: 124px;
+    height: 124px;
+  }
+
+  #move-stick {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dialogue-bubble {
+    transition: none;
+  }
 }

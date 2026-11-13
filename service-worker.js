@@ -1,7 +1,7 @@
 // service-worker.js
 
 // Importa a versão do config.js
-const APP_VERSION = "1.0.6"; 
+const APP_VERSION = "1.2.2";
 
 const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const BASE_PATH = isDev ? '/' : '/wordhunt/';
@@ -15,12 +15,14 @@ const ASSETS_TO_CACHE = [
   BASE_PATH + 'main.js',
   BASE_PATH + 'libs/three.module.js',
   BASE_PATH + 'js/controls.js',
+  BASE_PATH + 'js/interactive.js',
   BASE_PATH + 'js/player.js',
   BASE_PATH + 'js/scene.js',
   BASE_PATH + 'js/world.js',
   BASE_PATH + 'assets/textures/floor.jpg',
   BASE_PATH + 'assets/textures/sky.jpg',
-  BASE_PATH + 'assets/icons/laser.png'
+  BASE_PATH + 'assets/icons/laser.png',
+  BASE_PATH + 'assets/images/npc-a.svg'
 ];
 
 // Evento de instalação - faz cache de todos os arquivos

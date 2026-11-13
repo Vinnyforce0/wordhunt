@@ -3,18 +3,69 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Meu Jogo 3D</title>
     <link rel="stylesheet" href="./style.css">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#000000">
 </head>
 
-<body> <!-- Tela inicial simples -->
-    <div id="overlay">
-        <h1>Meu Jogo 3D</h1>
-        <p>Clique para começar</p>
-    </div> <!-- Script principal -->
+<body>
+    <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="loading-title">
+        <div id="loading-panel">
+            <h1 id="loading-title">Carregando mundo</h1>
+            <progress id="loading-progress" max="1" value="0"></progress>
+            <p id="loading-status" aria-live="polite">Carregando ambiente do jogador...</p>
+        </div>
+        <div id="menu-panel" hidden>
+            <h1 id="menu-title">Meu Jogo 3D</h1>
+            <p>WASD ou joystick para andar · Espaço ou Pular para saltar</p>
+            <p>Pressione E ou toque em Interagir perto de um NPC</p>
+            <p id="loading-warning" hidden></p>
+            <button id="start-button" type="button">Começar</button>
+            <button id="settings-button" type="button">Configurações</button>
+        </div>
+        <section id="settings-panel" aria-labelledby="settings-title" hidden>
+            <h2 id="settings-title">Configurações</h2>
+            <label>
+                <input id="grass-toggle" type="checkbox" checked>
+                Mostrar grama
+            </label>
+            <label>
+                <input id="clouds-toggle" type="checkbox" checked>
+                Mostrar nuvens
+            </label>
+            <button id="settings-back-button" type="button">Voltar</button>
+        </section>
+    </div>
+    <button id="menu-button" type="button" aria-controls="overlay" aria-expanded="false" hidden>
+        Menu
+    </button>
+    <button id="debug-button" type="button" aria-controls="debug-hud" aria-expanded="false">
+        Debug
+    </button>
+    <div id="debug-hud" aria-label="Painel de debug" hidden>
+        <div>Coyote time: <span id="debug-coyote-time">0.00 s</span></div>
+        <div>Posição X: <span id="debug-position-x">0.00</span></div>
+        <div>Posição Y: <span id="debug-position-y">0.00</span></div>
+        <div>Posição Z: <span id="debug-position-z">0.00</span></div>
+        <div>NPC: <span id="debug-npc-id">Nenhum</span></div>
+    </div>
+    <div id="dialogue-bubble" aria-hidden="true">
+        <div id="dialogue-avatar" aria-hidden="true"></div>
+        <div id="dialogue-text-panel">
+            <p id="dialogue-text"></p>
+        </div>
+    </div>
+    <div id="touch-controls" hidden>
+        <div id="look-zone" role="group" aria-label="Área para controlar a câmera">
+        </div>
+        <div id="move-pad" role="group" aria-label="Joystick de movimento">
+            <div id="move-stick" aria-hidden="true"></div>
+        </div>
+        <button id="interact-button" type="button" aria-label="Interagir" hidden>Interagir</button>
+        <button id="jump-button" type="button" aria-label="Pular">Pular</button>
+    </div>
     <script type="module" src="main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
