@@ -5,6 +5,7 @@ export function createWorld(
   scene,
   {
     terrainExclusions = [],
+    grassPatches = [],
     boundsHalfSize = 30,
     environmentId = DEFAULT_ENVIRONMENT_ID
   } = {}
@@ -36,30 +37,36 @@ export function createWorld(
   ];
 
   const grassAreaHalfSize = boundsHalfSize - 1;
-  for (let i = 0; i < 6000; i++) {
+  const grassCount = Math.round(
+    6000 * (boundsHalfSize / 30) ** 2
+  );
+  for (let i = 0; i < grassCount; i++) {
     const x = (Math.random() * 2 - 1) * grassAreaHalfSize;
     const z = (Math.random() * 2 - 1) * grassAreaHalfSize;
     if (terrainExclusions.some((area) =>
       Math.hypot(x - area.x, z - area.z) < area.radius + 0.5
     )) continue;
 
-    const angle = Math.random() * Math.PI;
-    const halfWidth = 0.008 + Math.random() * 0.01;
-    const height = 0.12 + Math.random() * 0.22;
-    const lean = (Math.random() - 0.5) * 0.08;
-    const sideX = Math.cos(angle) * halfWidth;
-    const sideZ = Math.sin(angle) * halfWidth;
-    const leanX = Math.cos(angle + Math.PI / 2) * lean;
-    const leanZ = Math.sin(angle + Math.PI / 2) * lean;
-    grassPositions.push(
-      x - sideX, 0.015, z - sideZ,
-      x + sideX, 0.015, z + sideZ,
-      x + leanX, 0.015 + height, z + leanZ
-    );
+    addGrassBlade(grassPositions, grassColors, grassColorPalette, x, z, 0.015);
+  }
 
-    const color = grassColorPalette[Math.floor(Math.random() * grassColorPalette.length)];
-    for (let vertex = 0; vertex < 3; vertex++) {
-      grassColors.push(color.r, color.g, color.b);
+  const grassDensity =
+    grassCount / (grassAreaHalfSize * 2) ** 2;
+  for (const patch of grassPatches) {
+    const patchGrassCount = Math.round(
+      grassDensity * patch.width * patch.depth
+    );
+    for (let i = 0; i < patchGrassCount; i++) {
+      const x = patch.x + (Math.random() - 0.5) * patch.width;
+      const z = patch.z + (Math.random() - 0.5) * patch.depth;
+      addGrassBlade(
+        grassPositions,
+        grassColors,
+        grassColorPalette,
+        x,
+        z,
+        patch.baseY
+      );
     }
   }
 
@@ -98,6 +105,27 @@ export function createWorld(
   };
 }
 
+function addGrassBlade(positions, colors, colorPalette, x, z, baseY) {
+  const angle = Math.random() * Math.PI;
+  const halfWidth = 0.008 + Math.random() * 0.01;
+  const height = 0.12 + Math.random() * 0.22;
+  const lean = (Math.random() - 0.5) * 0.08;
+  const sideX = Math.cos(angle) * halfWidth;
+  const sideZ = Math.sin(angle) * halfWidth;
+  const leanX = Math.cos(angle + Math.PI / 2) * lean;
+  const leanZ = Math.sin(angle + Math.PI / 2) * lean;
+  positions.push(
+    x - sideX, baseY, z - sideZ,
+    x + sideX, baseY, z + sideZ,
+    x + leanX, baseY + height, z + leanZ
+  );
+
+  const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+  for (let vertex = 0; vertex < 3; vertex++) {
+    colors.push(color.r, color.g, color.b);
+  }
+}
+
 function createClouds(scene, boundsHalfSize, environmentId) {
   const cloudGeometry = new THREE.SphereGeometry(1, 16, 12);
   const cloudMotions = [];
@@ -105,7 +133,8 @@ function createClouds(scene, boundsHalfSize, environmentId) {
   const directionX = Math.cos(direction);
   const directionZ = Math.sin(direction);
 
-  for (let i = 0; i < 9; i++) {
+  const cloudCount = Math.max(1, Math.round(9 * boundsHalfSize / 30));
+  for (let i = 0; i < cloudCount; i++) {
     const cloud = new THREE.Group();
     cloud.userData.environmentId = environmentId;
     const puffCount = 5 + Math.floor(Math.random() * 5);

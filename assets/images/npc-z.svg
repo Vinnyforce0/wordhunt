@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Letra Z sonolenta</title>
+  <desc id="description">Uma letra Z lilás, com expressão sonolenta e um gorro de dormir azul.</desc>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ccacf0"/>
+      <stop offset="1" stop-color="#8e69df"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="256" cy="493" rx="163" ry="12" fill="#19243a" opacity=".16"/>
+
+  <path
+    d="M104 117h304v76L232 343h181v76H99v-76l177-150H104z"
+    fill="url(#body)"
+    stroke="#29334d"
+    stroke-width="15"
+    stroke-linejoin="round"
+  />
+
+  <g stroke="#29334d" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M211 268c11 11 25 11 37 0M260 265c11 10 24 10 35 0" fill="none" stroke-width="8"/>
+    <path d="M228 300c12 7 25 7 37 0" fill="none" stroke-width="6"/>
+  </g>
+</svg>

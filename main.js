@@ -77,7 +77,8 @@ const interactiveWorld = createInteractiveWorld(scene, {
 const world = {
   ...interactiveWorld,
   ...createWorld(scene, {
-    terrainExclusions: [interactiveWorld.hill],
+    terrainExclusions: interactiveWorld.hills,
+    grassPatches: interactiveWorld.grassPatches,
     boundsHalfSize: interactiveWorld.boundsHalfSize,
     environmentId
   })
@@ -209,7 +210,11 @@ function updateInteractionButton() {
 
 function isNearPlayer(target) {
   const radius = target.interactionRadius || 3;
-  return Math.hypot(camera.position.x - target.x, camera.position.z - target.z) <= radius;
+  return Math.hypot(
+    camera.position.x - target.x,
+    camera.position.y - target.y,
+    camera.position.z - target.z
+  ) <= radius;
 }
 
 function interactWithNearbyNpc() {

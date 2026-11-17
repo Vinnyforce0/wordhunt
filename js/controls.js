@@ -33,14 +33,20 @@ let coyoteTimeRemaining = 0;
 let playerControlsEnabled = true;
 let autoLookTarget = null;
 let resetTouchInput = () => {};
-let hill = null;
+let hills = [];
 let platforms = [];
+let obstacles = [];
 let worldBoundsHalfSize = Infinity;
 
 export function setupControls(cam, world = {}) {
   camera = cam;
-  hill = world.hill || null;
+  hills = Array.isArray(world.hills)
+    ? world.hills
+    : world.hill
+      ? [world.hill]
+      : [];
   platforms = world.platforms || [];
+  obstacles = world.obstacles || [];
   worldBoundsHalfSize = world.boundsHalfSize || Infinity;
   setupTouchControls();
 
@@ -238,7 +244,11 @@ export function updateControls(deltaTime = 1 / 60) {
   }
 
   const previousFootY = camera.position.y - playerHeight;
-  const previousSurfaceY = getSurfaceHeight(camera.position.x, camera.position.z);
+  const previousSurfaceY = getSurfaceHeight(
+    camera.position.x,
+    camera.position.z,
+    previousFootY
+  );
   const wasGrounded =
     verticalVelocity <= 0 && Math.abs(previousFootY - previousSurfaceY) < 0.08;
 
@@ -265,6 +275,7 @@ export function updateControls(deltaTime = 1 / 60) {
     direction.applyAxisAngle(worldUp, yaw);
     const movement = direction.multiplyScalar(speed * inputStrength * deltaTime);
     const footY = camera.position.y - playerHeight;
+    let movementFootY = footY;
     const steps = Math.max(
       1,
       Math.ceil(Math.max(Math.abs(movement.x), Math.abs(movement.z)) / collisionStepSize)
@@ -274,24 +285,66 @@ export function updateControls(deltaTime = 1 / 60) {
       const nextX = camera.position.x + movement.x / steps;
       const nextZ = camera.position.z + movement.z / steps;
 
-      if (canOccupy(nextX, camera.position.z, footY)) {
+      if (canOccupy(nextX, camera.position.z, movementFootY, wasGrounded)) {
         camera.position.x = nextX;
+        movementFootY = Math.max(
+          movementFootY,
+          getSurfaceHeight(camera.position.x, camera.position.z, movementFootY)
+        );
       }
-      if (canOccupy(camera.position.x, nextZ, footY)) {
+      if (canOccupy(camera.position.x, nextZ, movementFootY, wasGrounded)) {
         camera.position.z = nextZ;
+        movementFootY = Math.max(
+          movementFootY,
+          getSurfaceHeight(camera.position.x, camera.position.z, movementFootY)
+        );
       }
     }
   }
 
+  const previousHeadY = previousFootY + playerBodyHeight;
   verticalVelocity -= gravity * deltaTime;
-  camera.position.y += verticalVelocity * deltaTime;
+  let nextFootY = previousFootY + verticalVelocity * deltaTime;
 
-  const surfaceY = getSurfaceHeight(camera.position.x, camera.position.z);
-  const footY = camera.position.y - playerHeight;
-  if (verticalVelocity <= 0 && footY <= surfaceY + verticalCollisionEpsilon) {
-    camera.position.y = surfaceY + playerHeight;
+  if (verticalVelocity > 0) {
+    const nextHeadY = nextFootY + playerBodyHeight;
+    const ceiling = platforms
+      .filter((platform) =>
+        isOverPlatform(camera.position.x, camera.position.z, platform) &&
+        previousHeadY <= platform.bottomY + verticalCollisionEpsilon &&
+        nextHeadY >= platform.bottomY - verticalCollisionEpsilon
+      )
+      .sort((a, b) => a.bottomY - b.bottomY)[0];
+
+    if (ceiling) {
+      nextFootY = ceiling.bottomY - playerBodyHeight;
+      verticalVelocity = 0;
+    }
+  } else {
+    const landing = platforms
+      .filter((platform) =>
+        isOverPlatform(camera.position.x, camera.position.z, platform) &&
+        previousFootY >= platform.topY - verticalCollisionEpsilon &&
+        nextFootY <= platform.topY + verticalCollisionEpsilon
+      )
+      .sort((a, b) => b.topY - a.topY)[0];
+
+    if (landing) {
+      nextFootY = landing.topY;
+      verticalVelocity = 0;
+    }
+  }
+
+  const terrainY = getTerrainHeight(camera.position.x, camera.position.z);
+  if (
+    verticalVelocity <= 0 &&
+    nextFootY <= terrainY + verticalCollisionEpsilon
+  ) {
+    nextFootY = Math.max(nextFootY, terrainY);
     verticalVelocity = 0;
   }
+
+  camera.position.y = nextFootY + playerHeight;
 }
 
 export function setPlayerControlsEnabled(enabled) {
@@ -360,7 +413,7 @@ function getShortestAngleDifference(current, target) {
   return difference;
 }
 
-function canOccupy(x, z, footY) {
+function canOccupy(x, z, footY, followsGround = false) {
   if (
     Math.abs(x) > worldBoundsHalfSize - playerRadius ||
     Math.abs(z) > worldBoundsHalfSize - playerRadius
@@ -370,35 +423,48 @@ function canOccupy(x, z, footY) {
 
   if (getTerrainHeight(x, z) > footY + maxStepHeight) return false;
 
-  const headY = footY + playerBodyHeight;
+  const candidateFootY = followsGround
+    ? Math.max(footY, getSurfaceHeight(x, z, footY))
+    : footY;
+  const headY = candidateFootY + playerBodyHeight;
   for (const platform of platforms) {
-    const nearestX = Math.max(
-      platform.x - platform.halfWidth,
-      Math.min(x, platform.x + platform.halfWidth)
-    );
-    const nearestZ = Math.max(
-      platform.z - platform.halfDepth,
-      Math.min(z, platform.z + platform.halfDepth)
-    );
-    const distanceX = x - nearestX;
-    const distanceZ = z - nearestZ;
-    const overlapsPlatform =
-      distanceX * distanceX + distanceZ * distanceZ <= playerRadius ** 2;
-    const overlapsVertically =
-      footY < platform.topY - verticalCollisionEpsilon &&
-      headY > platform.bottomY + verticalCollisionEpsilon;
-
-    if (overlapsPlatform && overlapsVertically) return false;
+    if (overlapsSolidObject(x, z, candidateFootY, headY, platform)) return false;
+  }
+  for (const obstacle of obstacles) {
+    if (overlapsSolidObject(x, z, candidateFootY, headY, obstacle)) return false;
   }
 
   return true;
 }
 
-function getSurfaceHeight(x, z) {
+function overlapsSolidObject(x, z, footY, headY, object) {
+  const nearestX = Math.max(
+    object.x - object.halfWidth,
+    Math.min(x, object.x + object.halfWidth)
+  );
+  const nearestZ = Math.max(
+    object.z - object.halfDepth,
+    Math.min(z, object.z + object.halfDepth)
+  );
+  const distanceX = x - nearestX;
+  const distanceZ = z - nearestZ;
+  const overlapsHorizontally =
+    distanceX * distanceX + distanceZ * distanceZ <= playerRadius ** 2;
+  const overlapsVertically =
+    footY < object.topY - verticalCollisionEpsilon &&
+    headY > object.bottomY + verticalCollisionEpsilon;
+
+  return overlapsHorizontally && overlapsVertically;
+}
+
+function getSurfaceHeight(x, z, footY) {
   let surfaceY = getTerrainHeight(x, z);
 
   for (const platform of platforms) {
-    if (isOverPlatform(x, z, platform)) {
+    if (
+      isOverPlatform(x, z, platform) &&
+      footY >= platform.topY - verticalCollisionEpsilon
+    ) {
       surfaceY = Math.max(surfaceY, platform.topY);
     }
   }
@@ -423,11 +489,14 @@ function isOverPlatform(x, z, platform) {
 function getTerrainHeight(x, z) {
   let terrainY = 0;
 
-  if (hill) {
+  for (const hill of hills) {
     const distance = Math.hypot(x - hill.x, z - hill.z);
     if (distance < hill.radius) {
       const ratio = distance / hill.radius;
-      terrainY = hill.peakHeight * (1 - ratio * ratio);
+      terrainY = Math.max(
+        terrainY,
+        hill.peakHeight * (1 - ratio * ratio)
+      );
     }
   }
 

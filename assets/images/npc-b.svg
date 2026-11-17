@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Letra B debochada</title>
+  <desc id="description">Uma letra B verde, com sobrancelha levantada e sorriso de deboche.</desc>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b9f36b"/>
+      <stop offset="1" stop-color="#45b96c"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="256" cy="493" rx="163" ry="12" fill="#19243a" opacity=".16"/>
+
+  <path
+    d="M118 76h151c84 0 131 43 131 111 0 39-20 68-56 83 43 13 66 44 66 91 0 74-56 104-143 104H118V76Zm91 78v77h61c39 0 58-13 58-39s-19-38-58-38h-61Zm0 154v79h69c43 0 64-14 64-40s-21-39-64-39h-69Z"
+    fill="url(#body)"
+    fill-rule="evenodd"
+    stroke="#29334d"
+    stroke-width="15"
+    stroke-linejoin="round"
+  />
+
+  <g stroke="#29334d" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M207 243c13-12 30-14 45-5" fill="none" stroke-width="7"/>
+    <path d="M264 239c12-10 29-10 42 0" fill="none" stroke-width="7"/>
+    <ellipse cx="231" cy="263" rx="13" ry="17" fill="#fffdf5" stroke-width="5"/>
+    <ellipse cx="276" cy="261" rx="13" ry="17" fill="#fffdf5" stroke-width="5"/>
+    <circle cx="235" cy="267" r="6" fill="#29334d" stroke="none"/>
+    <circle cx="280" cy="264" r="6" fill="#29334d" stroke="none"/>
+    <path d="M237 291c23 13 47 7 68-11" fill="none" stroke-width="7"/>
+  </g>
+
+</svg>
