@@ -15,6 +15,7 @@ document.body.appendChild(renderer.domElement);
 
 // altura do "player"
 camera.position.y = 1.6;
+scene.add(camera);
 
 // 🚨 IMPORTANTE (isso resolve o erro)
 export { scene, camera, renderer };

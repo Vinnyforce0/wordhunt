@@ -3,12 +3,15 @@ import { scene, camera, renderer } from './js/scene.js';
 import {
   getCoyoteTimeRemaining,
   isCameraTurning,
+  lookDownForInventory,
+  restoreCameraView,
   setPlayerControlsEnabled,
   setupControls,
   turnCameraToward,
   updateControls
 } from './js/controls.js';
 import { createInteractiveWorld } from './js/interactive.js';
+import { createInventoryBook } from './assets/models/book.js';
 import {
   DEFAULT_ENVIRONMENT_ID,
   getNpcDialogueState,
@@ -86,6 +89,8 @@ const world = {
 
 // configura controles
 setupControls(camera, world);
+const inventoryBook = createInventoryBook();
+camera.add(inventoryBook.group, inventoryBook.floatingPageNumbers);
 
 // overlay (tela inicial)
 const startButton = document.getElementById("start-button");
@@ -103,6 +108,8 @@ const debugPositionZ = document.getElementById("debug-position-z");
 const debugNpcId = document.getElementById("debug-npc-id");
 const interactButton = document.getElementById("interact-button");
 const touchControls = document.getElementById("touch-controls");
+const inventoryButton = document.getElementById("inventory-button");
+const inventoryStatus = document.getElementById("inventory-status");
 const dialogueBubble = document.getElementById("dialogue-bubble");
 const dialogueAvatar = document.getElementById("dialogue-avatar");
 const dialogueText = document.getElementById("dialogue-text");
@@ -116,6 +123,10 @@ let typingTimer = null;
 let fullDialogueText = "";
 let dialogueCharacters = [];
 let typedCharacterCount = 0;
+let inventoryOpen = false;
+let inventoryClosePending = false;
+let inventoryRestorePending = false;
+let inventoryBookProgress = 0;
 
 // ===============================
 // 🖱️ INICIAR JOGO AO CLICAR
@@ -129,6 +140,7 @@ startButton.addEventListener("click", () => {
 });
 
 menuButton.addEventListener("click", () => {
+  if (inventoryOpen) closeInventory();
   menuPanel.hidden = false;
   settingsPanel.hidden = true;
   overlay.hidden = false;
@@ -161,8 +173,21 @@ debugButton.addEventListener("click", () => {
 });
 
 interactButton.addEventListener("click", interactWithNearbyNpc);
+inventoryButton.addEventListener("click", toggleInventory);
 
 document.addEventListener("keydown", (event) => {
+  if (event.code === "KeyI" && !event.repeat && overlay.hidden) {
+    event.preventDefault();
+    toggleInventory();
+    return;
+  }
+
+  if (event.code === "Escape" && inventoryOpen) {
+    event.preventDefault();
+    closeInventory();
+    return;
+  }
+
   if (event.code === "KeyE" && !event.repeat && overlay.hidden) {
     interactWithNearbyNpc();
   }
@@ -181,18 +206,21 @@ function animate(timestamp) {
     ? 0
     : Math.min((timestamp - previousFrameTime) / 1000, 0.05);
   previousFrameTime = timestamp;
-  if (overlay.hidden) {
+  if (overlay.hidden || inventoryClosePending) {
     updateControls(deltaTime);
-    if (
-      activeNpc &&
-      activeNpcDialogueState.phase === "turning" &&
-      !isCameraTurning()
-    ) {
-      showNpcDialogue();
+    if (overlay.hidden) {
+      if (
+        activeNpc &&
+        activeNpcDialogueState.phase === "turning" &&
+        !isCameraTurning()
+      ) {
+        showNpcDialogue();
+      }
+      world.update(deltaTime);
+      updateInteractionButton();
+      updateDebugHud();
     }
-    world.update(deltaTime);
-    updateInteractionButton();
-    updateDebugHud();
+    updateInventoryBook(deltaTime);
   }
 
   // renderiza a cena
@@ -205,6 +233,7 @@ function updateInteractionButton() {
   interactButton.hidden =
     (activeNpcDialogueState && activeNpcDialogueState.phase === "turning") ||
     (!nearbyNpc && !nearbyArea);
+  inventoryButton.hidden = Boolean(nearbyNpc || nearbyArea);
   debugNpcId.textContent = nearbyNpc ? String(nearbyNpc.id) : "Nenhum";
 }
 
@@ -360,6 +389,92 @@ function updateDebugHud() {
 }
 
 requestAnimationFrame(animate);
+
+function toggleInventory() {
+  if (inventoryClosePending) return;
+  if (inventoryOpen) {
+    closeInventory();
+    return;
+  }
+  if (!overlay.hidden || activeNpc) return;
+
+  const items = playerState.inventory.map((item, index) => {
+    if (typeof item === "string" || typeof item === "number") {
+      return String(item);
+    }
+    if (item && typeof item === "object") {
+      const label = item.name || item.label || item.word || item.letter || item.id;
+      if (label !== undefined) return String(label);
+    }
+    return `Item ${index + 1}`;
+  });
+
+  inventoryBook.updateInventory(items);
+  inventoryStatus.textContent = items.length
+    ? `Inventário aberto. ${items.length} ${items.length === 1 ? "item" : "itens"}: ${items.join(", ")}`
+    : "Inventário aberto.";
+  inventoryOpen = true;
+  inventoryButton.disabled = false;
+  inventoryButton.textContent = "Fechar livro";
+  inventoryButton.setAttribute("aria-label", "Fechar inventário");
+  inventoryButton.setAttribute("aria-expanded", "true");
+  inventoryBook.group.visible = true;
+  inventoryBook.floatingPageNumbers.visible = true;
+  inventoryBookProgress = 0;
+  inventoryBook.setOpenProgress(inventoryBookProgress);
+  touchControls.classList.add("inventory-active");
+  setPlayerControlsEnabled(false);
+  lookDownForInventory();
+}
+
+function closeInventory() {
+  if (!inventoryOpen) return;
+
+  inventoryOpen = false;
+  inventoryClosePending = true;
+  inventoryRestorePending = false;
+  inventoryButton.disabled = true;
+  inventoryButton.textContent = "Fechando...";
+  inventoryButton.setAttribute("aria-label", "Fechando inventário");
+  inventoryButton.setAttribute("aria-expanded", "false");
+  inventoryStatus.textContent = "Fechando o inventário.";
+}
+
+function updateInventoryBook(deltaTime) {
+  const progressChange = deltaTime * 3.6;
+  if (inventoryOpen && !isCameraTurning()) {
+    inventoryBookProgress = Math.min(1, inventoryBookProgress + progressChange);
+  } else if (inventoryClosePending && !inventoryRestorePending) {
+    inventoryBookProgress = Math.max(0, inventoryBookProgress - progressChange);
+  }
+  inventoryBook.setOpenProgress(inventoryBookProgress);
+
+  if (
+    inventoryClosePending &&
+    inventoryBookProgress === 0 &&
+    !inventoryRestorePending
+  ) {
+    inventoryBook.group.visible = false;
+    inventoryBook.floatingPageNumbers.visible = false;
+    restoreCameraView();
+    inventoryRestorePending = true;
+  }
+
+  if (
+    inventoryClosePending &&
+    inventoryRestorePending &&
+    !isCameraTurning()
+  ) {
+    inventoryClosePending = false;
+    inventoryRestorePending = false;
+    inventoryButton.disabled = false;
+    inventoryButton.textContent = "Inventário";
+    inventoryButton.setAttribute("aria-label", "Abrir inventário");
+    touchControls.classList.remove("inventory-active");
+    setPlayerControlsEnabled(true);
+    inventoryStatus.textContent = "Inventário fechado.";
+  }
+}
 
 // ===============================
 // 📱 RESPONSIVIDADE

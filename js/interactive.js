@@ -26,7 +26,7 @@ const towerDefinition = {
   z: 27,
   width: 10,
   depth: 8,
-  height: 5,
+  height: 10,
   roofThickness: 0.25,
   color: 0x77746b
 };
@@ -79,7 +79,7 @@ const npcDefinitions = [
       "nao sei tambem, eu vi isso a 2 anos, nao lembro",
       "Da uma olhada na biblioteca depois",
       "Enfim, procure a letra B, ele pode te ajudar a desbloquear seus poderes",
-      "Eu to aqui pelo alivio comico, a primeira letra do alfabeto, sendo a mais inutil",
+      "Eu to aqui pelo alivio comico, a primeira letra do alfabeto sendo a mais inutil do jogo",
       "Adeus, aventureiro."
     ]
   },

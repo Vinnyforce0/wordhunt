@@ -1,7 +1,7 @@
 // service-worker.js
 
 // Importa a versão do config.js
-const APP_VERSION = "1.2.12";
+const APP_VERSION = "1.2.25";
 
 const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const BASE_PATH = isDev ? '/' : '/wordhunt/';
@@ -19,6 +19,7 @@ const ASSETS_TO_CACHE = [
   BASE_PATH + 'js/player.js',
   BASE_PATH + 'js/scene.js',
   BASE_PATH + 'js/world.js',
+  BASE_PATH + 'assets/models/book.js',
   BASE_PATH + 'assets/textures/floor.jpg',
   BASE_PATH + 'assets/textures/sky.jpg',
   BASE_PATH + 'assets/icons/laser.png',

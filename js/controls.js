@@ -32,6 +32,7 @@ let jumpRequested = false;
 let coyoteTimeRemaining = 0;
 let playerControlsEnabled = true;
 let autoLookTarget = null;
+let savedCameraView = null;
 let resetTouchInput = () => {};
 let hills = [];
 let platforms = [];
@@ -79,7 +80,7 @@ export function setupControls(cam, world = {}) {
   document.body.addEventListener("click", (event) => {
     if (
       event.target instanceof Element &&
-      event.target.closest("#debug-button, #debug-hud, #interact-button, #jump-button")
+      event.target.closest("#debug-button, #debug-hud, #interact-button, #jump-button, #inventory-button")
     ) {
       return;
     }
@@ -378,6 +379,20 @@ export function turnCameraToward(target) {
   };
 }
 
+export function lookDownForInventory() {
+  if (!camera) return;
+
+  savedCameraView = { yaw, pitch };
+  autoLookTarget = { yaw, pitch: -Math.PI / 3 };
+}
+
+export function restoreCameraView() {
+  if (!camera || !savedCameraView) return;
+
+  autoLookTarget = savedCameraView;
+  savedCameraView = null;
+}
+
 export function isCameraTurning() {
   return autoLookTarget !== null;
 }
@@ -391,7 +406,7 @@ function updateAutomaticCameraTurn(deltaTime) {
 
   const yawDifference = getShortestAngleDifference(yaw, autoLookTarget.yaw);
   const pitchDifference = autoLookTarget.pitch - pitch;
-  const easing = 1 - Math.exp(-8 * deltaTime);
+  const easing = 1 - Math.exp(-12 * deltaTime);
   yaw += yawDifference * easing;
   pitch += pitchDifference * easing;
 

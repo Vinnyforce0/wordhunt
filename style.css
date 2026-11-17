@@ -78,6 +78,7 @@ canvas {
 
 #debug-hud[hidden],
 #interact-button[hidden],
+#inventory-button[hidden],
 #menu-button[hidden] {
   display: none;
 }
@@ -187,9 +188,17 @@ canvas {
   display: none;
 }
 
+#touch-controls.conversation-active #inventory-button,
 #touch-controls.conversation-active #look-zone,
 #touch-controls.conversation-active #move-pad,
 #touch-controls.conversation-active #jump-button {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#touch-controls.inventory-active #look-zone,
+#touch-controls.inventory-active #move-pad,
+#touch-controls.inventory-active #jump-button {
   visibility: hidden;
   pointer-events: none;
 }
@@ -240,20 +249,34 @@ canvas {
   touch-action: none;
 }
 
-#interact-button {
+#interact-button,
+#inventory-button {
   position: absolute;
   right: calc(env(safe-area-inset-right, 0px) + 42px);
   bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
-  min-width: 76px;
+  width: 104px;
+  min-width: 104px;
   height: 48px;
   padding: 0 10px;
   border: 1px solid rgb(255 255 255 / 70%);
   border-radius: 24px;
-  background: rgb(0 0 0 / 55%);
   color: white;
-  font-size: 13px;
   pointer-events: auto;
   touch-action: none;
+}
+
+#inventory-button {
+  background: rgb(0 0 0 / 60%);
+  font-size: 13px;
+}
+
+#inventory-button:disabled {
+  opacity: 0.7;
+}
+
+#interact-button {
+  background: rgb(0 0 0 / 55%);
+  font-size: 13px;
 }
 
 #move-stick {
@@ -297,6 +320,18 @@ canvas {
     width: 52px;
     height: 52px;
   }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,26 +1,44 @@
 {
+  "id": "./index.html",
   "name": "WordHunt",
-  "short_name": "wordhunt",
+  "short_name": "WordHunt",
+  "description": "Aventura 3D de exploração: percorra um mundo com plataformas e interaja com personagens em forma de letras. Compatível com teclado e controles de toque.",
+  "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "landscape",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "description": "nenhuma descrição",
+  "categories": [
+    "games"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "assets/textures/floor.jpg",
-      "sizes": "128x128",
-      "type": "image/jpeg"
+      "src": "assets/images/npc-a.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "assets/icons/laser.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "assets/images/npc-b.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "assets/textures/sky.jpg",
-      "sizes": "1123x794",
-      "type": "image/jpeg"
+      "src": "assets/images/npc-c.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/npc-z.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

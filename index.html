@@ -57,12 +57,16 @@
             <p id="dialogue-text"></p>
         </div>
     </div>
+    <div id="inventory-status" class="visually-hidden" role="status" aria-live="polite"></div>
     <div id="touch-controls" hidden>
         <div id="look-zone" role="group" aria-label="Área para controlar a câmera">
         </div>
         <div id="move-pad" role="group" aria-label="Joystick de movimento">
             <div id="move-stick" aria-hidden="true"></div>
         </div>
+        <button id="inventory-button" type="button" aria-label="Abrir inventário" aria-expanded="false" hidden>
+            Inventário
+        </button>
         <button id="interact-button" type="button" aria-label="Interagir" hidden>Interagir</button>
         <button id="jump-button" type="button" aria-label="Pular">Pular</button>
     </div>

@@ -1,34 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Letra C dentuça</title>
-  <desc id="description">Uma letra C azul com olhos atentos e dentes afiados saindo da própria letra.</desc>
-  <defs>
-    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#71dcff"/>
-      <stop offset="1" stop-color="#347be8"/>
-    </linearGradient>
-  </defs>
-
-  <ellipse cx="256" cy="493" rx="163" ry="12" fill="#19243a" opacity=".16"/>
+  <title id="title">Letra C brava</title>
+  <desc id="description">Uma letra C azul com rosto bravo e dentes ao longo do contorno interno.</desc>
 
   <path
-    d="M386 126c-35-38-79-56-137-56C143 70 78 145 78 256s65 186 171 186c59 0 105-22 139-62l-65-62-19-9 14-24-28 13 13-25-29 14C267 303 257 329 249 352c-55 0-84-37-84-96s29-96 84-96c31 0 55 12 75 35l64-69Z"
-    fill="url(#body)"
+    d="M389 126c-35-39-81-59-137-59C144 67 72 143 72 256s72 189 180 189c57 0 103-21 137-60l-57-57c-21 23-47 35-80 35-64 0-103-44-103-107s39-107 103-107c32 0 58 11 80 34l57-57Z"
+    fill="#4ca9ee"
     stroke="#29334d"
-    stroke-width="15"
+    stroke-width="14"
     stroke-linejoin="round"
   />
 
+  <g fill="#fffdf5" stroke="#29334d" stroke-width="4" stroke-linejoin="round">
+    <path d="m329 174-15-9 20 1z"/>
+    <path d="m310 163-15-8 20 0z"/>
+    <path d="m291 153-16-6 19 7z"/>
+    <path d="m270 146-16-3 18 10z"/>
+    <path d="m247 143-15 2 17 10z"/>
+    <path d="m225 148-14 5 18 8z"/>
+    <path d="m204 158-12 9 19 4z"/>
+    <path d="m185 174-10 12 19 0z"/>
+    <path d="m169 197-7 14 19-4z"/>
+    <path d="m157 224-3 15 18-9z"/>
+    <path d="m153 251 0 15 18-13z"/>
+    <path d="m157 280 4 15 16-15z"/>
+    <path d="m167 307 8 13 12-18z"/>
+    <path d="m184 331 11 11 7-20z"/>
+    <path d="m207 350 14 8 1-21z"/>
+    <path d="m234 365 15 5-5-21z"/>
+    <path d="m263 370 15 0-10-19z"/>
+    <path d="m291 363 14-5-15-16z"/>
+    <path d="m316 350 13-9-18-11z"/>
+    <path d="m339 331 11-12-20-5z"/>
+  </g>
+
   <g stroke="#29334d" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M189 211c12-11 26-14 41-9M244 202c13-8 28-7 40 3" fill="none" stroke-width="7"/>
-    <ellipse cx="211" cy="227" rx="13" ry="17" fill="#fffdf5" stroke-width="5"/>
-    <ellipse cx="263" cy="222" rx="13" ry="17" fill="#fffdf5" stroke-width="5"/>
-    <circle cx="215" cy="230" r="6" fill="#29334d" stroke="none"/>
-    <circle cx="267" cy="225" r="6" fill="#29334d" stroke="none"/>
-    <path d="M198 285c14 9 29 8 43-2" fill="none" stroke-width="6"/>
+    <path d="m201 211 36 13M296 211l-36 13" fill="none" stroke-width="9"/>
+    <path d="M208 239c10-11 24-11 34 0-9 9-24 9-34 0ZM260 239c10-11 24-11 34 0-9 9-24 9-34 0Z" fill="#fffdf5" stroke-width="5"/>
+    <circle cx="228" cy="239" r="5" fill="#29334d" stroke="none"/>
+    <circle cx="280" cy="239" r="5" fill="#29334d" stroke="none"/>
+    <path d="M226 291q34-24 68 0" fill="none" stroke-width="8"/>
   </g>
-  <g fill="#fffdf5" stroke="#29334d" stroke-width="5" stroke-linejoin="round">
-    <path d="m304 309 14-24-28 13z"/>
-    <path d="m290 298 13-25-29 14z"/>
-  </g>
-  <path d="M124 133c23-24 53-39 88-44" fill="none" stroke="#fffdf5" stroke-width="10" stroke-linecap="round" opacity=".45"/>
 </svg>
