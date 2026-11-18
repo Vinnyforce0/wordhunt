@@ -13,11 +13,14 @@ import {
 import { createInteractiveWorld } from './js/interactive.js';
 import { createInventoryBook } from './assets/models/book.js';
 import {
+  addInventoryItem,
   DEFAULT_ENVIRONMENT_ID,
   getNpcDialogueState,
+  onPlayerAcquisition,
   playerState,
   recordNpcDialogue,
   recordPlayerAction,
+  selectNpcDialogues,
   setPlayerEnvironment
 } from './js/player.js';
 import { createWorld } from './js/world.js';
@@ -90,7 +93,11 @@ const world = {
 // configura controles
 setupControls(camera, world);
 const inventoryBook = createInventoryBook();
-camera.add(inventoryBook.group, inventoryBook.floatingPageNumbers);
+camera.add(
+  inventoryBook.group,
+  inventoryBook.floatingPageNumbers,
+  inventoryBook.acquisitionEffects
+);
 
 // overlay (tela inicial)
 const startButton = document.getElementById("start-button");
@@ -119,6 +126,7 @@ const endConversationMessage = "\"interaja novamente para encerrar conversa\"";
 const dialogueTypingInterval = 24;
 let activeNpc = null;
 let activeNpcDialogueState = null;
+let activeNpcDialogues = [];
 let typingTimer = null;
 let fullDialogueText = "";
 let dialogueCharacters = [];
@@ -127,6 +135,12 @@ let inventoryOpen = false;
 let inventoryClosePending = false;
 let inventoryRestorePending = false;
 let inventoryBookProgress = 0;
+const pageRaycaster = new THREE.Raycaster();
+const pagePointer = new THREE.Vector2();
+
+onPlayerAcquisition(({ type, entry }) => {
+  inventoryBook.showAcquisitionCard({ type, entry });
+});
 
 // ===============================
 // 🖱️ INICIAR JOGO AO CLICAR
@@ -174,6 +188,41 @@ debugButton.addEventListener("click", () => {
 
 interactButton.addEventListener("click", interactWithNearbyNpc);
 inventoryButton.addEventListener("click", toggleInventory);
+renderer.domElement.addEventListener("pointerdown", (event) => {
+  if (!inventoryOpen || inventoryClosePending || event.button !== 0) return;
+
+  const bounds = renderer.domElement.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return;
+  pagePointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+  pagePointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+  pageRaycaster.setFromCamera(pagePointer, camera);
+
+  const contentsHit = pageRaycaster.intersectObjects(
+    [inventoryBook.textPages.left, inventoryBook.textPages.right],
+    false
+  )[0];
+  if (contentsHit) {
+    const side =
+      contentsHit.object === inventoryBook.textPages.left ? "left" : "right";
+    const destination = inventoryBook.getContentsDestination(
+      side,
+      contentsHit.uv.y
+    );
+    if (destination && inventoryBook.goToPage(destination)) {
+      event.preventDefault();
+      return;
+    }
+  }
+
+  const hit = pageRaycaster.intersectObjects(
+    [inventoryBook.pages.left, inventoryBook.pages.right],
+    false
+  )[0];
+  if (!hit) return;
+
+  const direction = hit.object === inventoryBook.pages.left ? -1 : 1;
+  if (inventoryBook.turnPage(direction)) event.preventDefault();
+});
 
 document.addEventListener("keydown", (event) => {
   if (event.code === "KeyI" && !event.repeat && overlay.hidden) {
@@ -260,6 +309,7 @@ function interactWithNearbyNpc() {
     });
     activeNpc = null;
     activeNpcDialogueState = null;
+    activeNpcDialogues = [];
   }
 
   if (activeNpcDialogueState && activeNpcDialogueState.phase === "turning") {
@@ -281,7 +331,7 @@ function interactWithNearbyNpc() {
     return;
   }
 
-  if (activeNpcDialogueState.nextDialogueIndex < activeNpc.dialogues.length) {
+  if (activeNpcDialogueState.nextDialogueIndex < activeNpcDialogues.length) {
     showNextNpcDialogue();
     return;
   }
@@ -293,6 +343,7 @@ function interactWithNearbyNpc() {
 function startNpcConversation(npc) {
   activeNpc = npc;
   activeNpcDialogueState = getNpcDialogueState(npc.id);
+  activeNpcDialogues = selectNpcDialogues(npc, activeNpcDialogueState);
   activeNpcDialogueState.phase = "turning";
   activeNpcDialogueState.nextDialogueIndex = 0;
   activeNpcDialogueState.conversationsStarted++;
@@ -314,7 +365,7 @@ function showNpcDialogue() {
   dialogueBubble.classList.add("is-visible");
   dialogueBubble.setAttribute("aria-hidden", "false");
 
-  if (activeNpc.dialogues.length > 0) {
+  if (activeNpcDialogues.length > 0) {
     showNextNpcDialogue();
     return;
   }
@@ -325,7 +376,7 @@ function showNpcDialogue() {
 
 function showNextNpcDialogue() {
   const dialogue = String(
-    activeNpc.dialogues[activeNpcDialogueState.nextDialogueIndex]
+    activeNpcDialogues[activeNpcDialogueState.nextDialogueIndex]
   );
   activeNpcDialogueState.nextDialogueIndex++;
   showDialogueText(activeNpc, dialogue, "npc");
@@ -368,6 +419,12 @@ function stopDialogueTyping() {
 
 function closeNpcConversation() {
   const npcId = activeNpc.id;
+  if (activeNpc.reward && addInventoryItem(activeNpc.reward)) {
+    recordPlayerAction("acquired_item", {
+      npcId,
+      itemId: activeNpc.reward.id
+    });
+  }
   activeNpcDialogueState.phase = "idle";
   activeNpcDialogueState.nextDialogueIndex = 0;
   activeNpcDialogueState.conversationsCompleted++;
@@ -379,6 +436,7 @@ function closeNpcConversation() {
   setPlayerControlsEnabled(true);
   activeNpc = null;
   activeNpcDialogueState = null;
+  activeNpcDialogues = [];
 }
 
 function updateDebugHud() {
@@ -398,7 +456,7 @@ function toggleInventory() {
   }
   if (!overlay.hidden || activeNpc) return;
 
-  const items = playerState.inventory.map((item, index) => {
+  const formatEntries = (entries) => entries.map((item, index) => {
     if (typeof item === "string" || typeof item === "number") {
       return String(item);
     }
@@ -408,10 +466,16 @@ function toggleInventory() {
     }
     return `Item ${index + 1}`;
   });
+  const sections = {
+    letters: formatEntries(playerState.acquiredLetters),
+    words: formatEntries(playerState.discoveredWords),
+    items: formatEntries(playerState.inventory)
+  };
+  const entries = Object.values(sections).flat();
 
-  inventoryBook.updateInventory(items);
-  inventoryStatus.textContent = items.length
-    ? `Inventário aberto. ${items.length} ${items.length === 1 ? "item" : "itens"}: ${items.join(", ")}`
+  inventoryBook.updateInventory(sections);
+  inventoryStatus.textContent = entries.length
+    ? `Inventário aberto. ${entries.length} registro(s): ${entries.join(", ")}`
     : "Inventário aberto.";
   inventoryOpen = true;
   inventoryButton.disabled = false;
@@ -424,6 +488,7 @@ function toggleInventory() {
   inventoryBook.setOpenProgress(inventoryBookProgress);
   touchControls.classList.add("inventory-active");
   setPlayerControlsEnabled(false);
+  if (document.pointerLockElement) document.exitPointerLock();
   lookDownForInventory();
 }
 
@@ -441,13 +506,15 @@ function closeInventory() {
 }
 
 function updateInventoryBook(deltaTime) {
-  const progressChange = deltaTime * 3.6;
+  const progressChange = deltaTime * 2.5; // velocidade de abertura/fechamento do livro
   if (inventoryOpen && !isCameraTurning()) {
     inventoryBookProgress = Math.min(1, inventoryBookProgress + progressChange);
   } else if (inventoryClosePending && !inventoryRestorePending) {
     inventoryBookProgress = Math.max(0, inventoryBookProgress - progressChange);
   }
   inventoryBook.setOpenProgress(inventoryBookProgress);
+  inventoryBook.updatePageTurn(deltaTime);
+  inventoryBook.updateAcquisitionCards(deltaTime);
 
   if (
     inventoryClosePending &&

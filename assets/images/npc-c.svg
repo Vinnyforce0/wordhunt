@@ -10,29 +10,6 @@
     stroke-linejoin="round"
   />
 
-  <g fill="#fffdf5" stroke="#29334d" stroke-width="4" stroke-linejoin="round">
-    <path d="m329 174-15-9 20 1z"/>
-    <path d="m310 163-15-8 20 0z"/>
-    <path d="m291 153-16-6 19 7z"/>
-    <path d="m270 146-16-3 18 10z"/>
-    <path d="m247 143-15 2 17 10z"/>
-    <path d="m225 148-14 5 18 8z"/>
-    <path d="m204 158-12 9 19 4z"/>
-    <path d="m185 174-10 12 19 0z"/>
-    <path d="m169 197-7 14 19-4z"/>
-    <path d="m157 224-3 15 18-9z"/>
-    <path d="m153 251 0 15 18-13z"/>
-    <path d="m157 280 4 15 16-15z"/>
-    <path d="m167 307 8 13 12-18z"/>
-    <path d="m184 331 11 11 7-20z"/>
-    <path d="m207 350 14 8 1-21z"/>
-    <path d="m234 365 15 5-5-21z"/>
-    <path d="m263 370 15 0-10-19z"/>
-    <path d="m291 363 14-5-15-16z"/>
-    <path d="m316 350 13-9-18-11z"/>
-    <path d="m339 331 11-12-20-5z"/>
-  </g>
-
   <g stroke="#29334d" stroke-linecap="round" stroke-linejoin="round">
     <path d="m201 211 36 13M296 211l-36 13" fill="none" stroke-width="9"/>
     <path d="M208 239c10-11 24-11 34 0-9 9-24 9-34 0ZM260 239c10-11 24-11 34 0-9 9-24 9-34 0Z" fill="#fffdf5" stroke-width="5"/>

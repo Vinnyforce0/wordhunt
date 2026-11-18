@@ -4,7 +4,7 @@ REGRA DE MEMÓRIA DO PROJETO WORDHUNT
 2. Sempre que você perceber que eu alterei os diálogos dos NPCs, você deve revisar o português e corrigir possíveis erros.
 3. Sempre que você fizer alguma alteração no projeto, registre a mudança e mantenha o processo consistente.
 4. Sempre que houver mudanças no conteúdo dos NPCs, verifique clareza, gramática, pontuação e naturalidade do texto.
-5. Mantenha o projeto organizado, documentando regras e ajustes importantes para facilitar futuras alterações.
+5. Evite executar comandos de verificação do Git (como `git status` e `git diff`) e não abra o navegador para testar o app, a menos que eu peça explicitamente.
 
 PROPOSTA DO JOGO
 
@@ -15,3 +15,15 @@ O universo mistura diferentes alfabetos e transforma letras em poderes. Ao liber
 O protagonista não sabe escrever. O jogo não tem o objetivo de ensinar o jogador a escrever; aprender sobre letras e palavras é uma mecânica de exploração, descoberta e progressão.
 
 Na história, letras, números e símbolos vivem em harmonia até que Omega, uma letra do alfabeto grego, os aprisiona para dominar o mundo. Cabe ao jogador explorar o mundo, libertar os dígitos e derrotar Lord Omega.
+
+REQUISITOS FUTUROS
+
+- Implementar o SpellCaster como item utilizável. Ele deve ter um modelo 3D semelhante ao livro, posicionado no lado direito da tela como uma arma.
+- O SpellCaster deve parecer um teclado, exibindo como teclas apenas as letras encontradas pelo jogador.
+- Só deve ser possível conjurar palavras descobertas pelo jogador. Ao tentar conjurar uma palavra desconhecida, o SpellCaster deve dizer: "palavra desconhecida".
+- No livro, substituir a entrada de texto simples do SpellCaster (por exemplo, ". spellcaster") por um card flutuante semelhante ao card exibido ao adquirir um item. O card pode flutuar dentro ou fora do livro.
+- Aplicar a mesma apresentação em cards flutuantes às letras, palavras e aos demais itens que forem adicionados futuramente.
+
+REGISTRO DE ALTERAÇÕES
+
+2026-11-18 — Reorganizado o sumário: a página 1 exibe o título e a página 2 reúne links clicáveis para letras, palavras e itens; as seções agora começam na página 3. Versão do app: 1.2.42.

@@ -1,5 +1,5 @@
 import * as THREE from '../libs/three.module.js';
-import { DEFAULT_ENVIRONMENT_ID } from './player.js';
+import { DEFAULT_ENVIRONMENT_ID, SPELL_CASTER_ITEM } from './player.js';
 
 const hillDefinitions = [
   {
@@ -81,6 +81,23 @@ const npcDefinitions = [
       "Enfim, procure a letra B, ele pode te ajudar a desbloquear seus poderes",
       "Eu to aqui pelo alivio comico, a primeira letra do alfabeto sendo a mais inutil do jogo",
       "Adeus, aventureiro."
+    ],
+    dialogueVariants: [
+      {
+        priority: 10,
+        conditions: {
+          requiredItems: ["spellcaster"]
+        },
+        dialogues: [
+          "Então você conseguiu o SpellCaster! Agora pode canalizar letras e palavras para usar habilidades.",
+          "E eu posso contribuir com uma letra para os seus feitiços.",
+          "A.",
+          "É, só A. Mas cheguei primeiro: sou a letra número um!",
+          "Também sou uma das vogais mais usadas. Isso conta como experiência, né?",
+          "Ainda não? Tudo bem. Quando encontrar outras letras, formamos uma equipe. Eu fico na frente, como sempre.",
+          "So nao esquece de mim :)"
+        ]
+      }
     ]
   },
   {
@@ -95,9 +112,29 @@ const npcDefinitions = [
     color: 0x45b96c,
     image: "./assets/images/npc-b.svg",
     dialogues: [
-      "Ainda estou esperando meu design definitivo!",
-      "Eu deveria te dar uma Espada, mas VINNYFORCE0 ainda está programando uma."
-    ]
+      "Opa, estava à sua espera.",
+      "Pegue isto: o SpellCaster canaliza as letras que você encontrar e as palavras que descobrir para ativar habilidades.",
+      "Você vai precisar dele para seguir sua jornada."
+    ],
+    dialogueVariants: [
+      {
+        priority: 10,
+        conditions: {
+          requiredItems: ["spellcaster"],
+          conversationCount: { min: 2 }
+        },
+        dialogues: [
+          "Como está se saindo com o SpellCaster? Use as letras que coletar e as palavras que descobrir para ativar habilidades.",
+          "Continue explorando: cada nova combinação pode revelar um poder diferente.",
+          "Provavelmente, cairei no esquecimento depois desta conversa.",
+          "A propósito...",
+          "Não, você NÃO pode nos usar como letras para seus feitiços!",
+          "Há uma grande diferença entre usar as letras que você encontra pelo mapa e usar LETRAS QUE SÃO SERES VIVOS!",
+          "Isso é meio insensível da sua parte."
+        ]
+      }
+    ],
+    reward: { ...SPELL_CASTER_ITEM }
   }
 ];
 
@@ -339,6 +376,27 @@ function createNpc(scene, definition, environmentId, loadingManager) {
   const y = position.y === undefined ? size / 2 : position.y;
   const color = definition.color === undefined ? 0xffffff : definition.color;
   const dialogues = Array.isArray(definition.dialogues) ? [...definition.dialogues] : [];
+  const dialogueVariants = Array.isArray(definition.dialogueVariants)
+    ? definition.dialogueVariants.map((variant) => {
+        const conditions = variant.conditions || {};
+        return {
+          ...variant,
+          conditions: {
+            ...conditions,
+            requiredItems: [...(conditions.requiredItems || [])],
+            excludedItems: [...(conditions.excludedItems || [])],
+            requiredProgress: { ...(conditions.requiredProgress || {}) },
+            excludedProgress: { ...(conditions.excludedProgress || {}) },
+            moments: [...(conditions.moments || [])],
+            conversationCount: conditions.conversationCount
+              ? { ...conditions.conversationCount }
+              : undefined
+          },
+          dialogues: [...variant.dialogues]
+        };
+      })
+    : [];
+  const reward = definition.reward ? { ...definition.reward } : null;
   const material = new THREE.SpriteMaterial({ color });
   if (definition.image) {
     new THREE.TextureLoader(loadingManager).load(
@@ -382,6 +440,8 @@ function createNpc(scene, definition, environmentId, loadingManager) {
       : definition.interactionRadius,
     image: definition.image || null,
     dialogues,
+    dialogueVariants,
+    reward,
     sprite
   };
 }
