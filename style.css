@@ -203,6 +203,13 @@ canvas {
   pointer-events: none;
 }
 
+#touch-controls.spellcaster-active #move-pad,
+#touch-controls.spellcaster-active #jump-button,
+#touch-controls.spellcaster-active:not(.inventory-active) #inventory-button {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #touch-controls {
   position: fixed;
   inset: 0;
@@ -272,6 +279,102 @@ canvas {
 
 #inventory-button:disabled {
   opacity: 0.7;
+}
+
+#spellcaster-button {
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 42px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 178px);
+  z-index: 7;
+  height: 48px;
+  min-width: 104px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 24px;
+  background: rgb(30 24 58 / 82%);
+  color: white;
+  font-size: 13px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+#spellcaster-panel {
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 24px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 238px);
+  z-index: 7;
+  width: min(340px, calc(100vw - 48px));
+  padding: 12px;
+  border: 1px solid rgb(242 210 123 / 72%);
+  border-radius: 12px;
+  background: rgb(20 19 38 / 92%);
+  color: white;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+#spellcaster-panel[hidden],
+#spellcaster-button[hidden] {
+  display: none;
+}
+
+#spellcaster-word {
+  min-height: 24px;
+  margin-bottom: 8px;
+  text-align: center;
+  font: bold 20px/24px Georgia, serif;
+  letter-spacing: 4px;
+}
+
+#spellcaster-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+#spellcaster-keys button,
+.spellcaster-actions button {
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgb(242 210 123 / 65%);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 12%);
+  color: white;
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
+.spellcaster-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.spellcaster-actions button {
+  min-width: 74px;
+  font-size: 13px;
+}
+
+#spellcaster-status {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 132px);
+  z-index: 7;
+  max-width: calc(100vw - 48px);
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: rgb(20 19 38 / 88%);
+  color: #fff6dc;
+  opacity: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+#spellcaster-status.is-visible {
+  opacity: 1;
 }
 
 #interact-button {

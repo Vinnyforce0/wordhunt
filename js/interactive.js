@@ -74,12 +74,10 @@ const npcDefinitions = [
       "Maldito VINNYFORCE0! Ele é um preguiçoso. Não volta a desenvolver este jogo há dias e...",
       "...",
       "Acho que fui longe demais, hehe.",
-      "Quase ia me esquecendo, preciso te ajudar a adquirir os poderes da professia-",
-      "Que professia vc me pergunta?",
-      "nao sei tambem, eu vi isso a 2 anos, nao lembro",
-      "Da uma olhada na biblioteca depois",
-      "Enfim, procure a letra B, ele pode te ajudar a desbloquear seus poderes",
-      "Eu to aqui pelo alivio comico, a primeira letra do alfabeto sendo a mais inutil do jogo",
+      "Quase ia me esquecendo: preciso te ajudar a adquirir seus poderes.",
+      "Procure a letra B; ele pode ajudar a desbloquear suas habilidades.",
+      "Depois dê uma olhada na biblioteca.",
+      "Estarei aqui para aliviar a tensão. Afinal, sou a primeira letra do alfabeto.",
       "Adeus, aventureiro."
     ],
     dialogueVariants: [
@@ -95,7 +93,7 @@ const npcDefinitions = [
           "É, só A. Mas cheguei primeiro: sou a letra número um!",
           "Também sou uma das vogais mais usadas. Isso conta como experiência, né?",
           "Ainda não? Tudo bem. Quando encontrar outras letras, formamos uma equipe. Eu fico na frente, como sempre.",
-          "So nao esquece de mim :)"
+          "Só não esquece de mim :)"
         ]
       }
     ]
@@ -113,7 +111,8 @@ const npcDefinitions = [
     image: "./assets/images/npc-b.svg",
     dialogues: [
       "Opa, estava à sua espera.",
-      "Pegue isto: o SpellCaster canaliza as letras que você encontrar e as palavras que descobrir para ativar habilidades.",
+      "Pegue isto, o SpellCaster canaliza as letras que você encontrar e as palavras que descobrir para ativar habilidades.",
+      "Explore o mundo para encontrar letras e descobrir palavras. Só então poderá usá-las.",
       "Você vai precisar dele para seguir sua jornada."
     ],
     dialogueVariants: [

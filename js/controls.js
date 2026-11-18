@@ -31,6 +31,7 @@ let verticalVelocity = 0;
 let jumpRequested = false;
 let coyoteTimeRemaining = 0;
 let playerControlsEnabled = true;
+let playerMovementEnabled = true;
 let autoLookTarget = null;
 let savedCameraView = null;
 let resetTouchInput = () => {};
@@ -57,12 +58,15 @@ export function setupControls(cam, world = {}) {
   document.addEventListener("keydown", (e) => {
     if (e.code === "Space") {
       e.preventDefault();
-      if (playerControlsEnabled && !e.repeat) jumpRequested = true;
+      if (playerControlsEnabled && playerMovementEnabled && !e.repeat) {
+        jumpRequested = true;
+      }
       return;
     }
 
     if (e.key.toLowerCase() in keys) {
-      keys[e.key.toLowerCase()] = playerControlsEnabled;
+      keys[e.key.toLowerCase()] =
+        playerControlsEnabled && playerMovementEnabled;
     }
   });
 
@@ -80,7 +84,9 @@ export function setupControls(cam, world = {}) {
   document.body.addEventListener("click", (event) => {
     if (
       event.target instanceof Element &&
-      event.target.closest("#debug-button, #debug-hud, #interact-button, #jump-button, #inventory-button")
+      event.target.closest(
+        "#debug-button, #debug-hud, #interact-button, #jump-button, #inventory-button, #spellcaster-button, #spellcaster-panel"
+      )
     ) {
       return;
     }
@@ -131,13 +137,19 @@ function setupTouchControls() {
 
   controls.hidden = false;
   jumpButton.addEventListener("pointerdown", (event) => {
-    if (!playerControlsEnabled) return;
+    if (!playerControlsEnabled || !playerMovementEnabled) return;
     event.preventDefault();
     jumpButton.setPointerCapture(event.pointerId);
     jumpRequested = true;
   });
   jumpButton.addEventListener("click", (event) => {
-    if (playerControlsEnabled && event.detail === 0) jumpRequested = true;
+    if (
+      playerControlsEnabled &&
+      playerMovementEnabled &&
+      event.detail === 0
+    ) {
+      jumpRequested = true;
+    }
   });
 
   let movePointerId = null;
@@ -165,7 +177,7 @@ function setupTouchControls() {
   };
 
   movePad.addEventListener("pointerdown", (event) => {
-    if (!playerControlsEnabled || movePointerId !== null) return;
+    if (!playerControlsEnabled || !playerMovementEnabled || movePointerId !== null) return;
     event.preventDefault();
     movePointerId = event.pointerId;
     movePad.setPointerCapture(event.pointerId);
@@ -173,7 +185,11 @@ function setupTouchControls() {
   });
 
   movePad.addEventListener("pointermove", (event) => {
-    if (playerControlsEnabled && event.pointerId === movePointerId) {
+    if (
+      playerControlsEnabled &&
+      playerMovementEnabled &&
+      event.pointerId === movePointerId
+    ) {
       updateJoystick(event);
     }
   });
@@ -244,6 +260,15 @@ export function updateControls(deltaTime = 1 / 60) {
     return;
   }
 
+  if (!playerMovementEnabled) {
+    Object.keys(keys).forEach((key) => {
+      keys[key] = false;
+    });
+    joystickX = 0;
+    joystickY = 0;
+    jumpRequested = false;
+  }
+
   const previousFootY = camera.position.y - playerHeight;
   const previousSurfaceY = getSurfaceHeight(
     camera.position.x,
@@ -259,7 +284,11 @@ export function updateControls(deltaTime = 1 / 60) {
     coyoteTimeRemaining = Math.max(0, coyoteTimeRemaining - deltaTime);
   }
 
-  if (jumpRequested && coyoteTimeRemaining > 0) {
+  if (
+    playerMovementEnabled &&
+    jumpRequested &&
+    coyoteTimeRemaining > 0
+  ) {
     verticalVelocity = jumpVelocity;
     coyoteTimeRemaining = 0;
   }
@@ -267,8 +296,10 @@ export function updateControls(deltaTime = 1 / 60) {
 
   const direction = new THREE.Vector3();
 
-  direction.z = (keys.s ? 1 : 0) - (keys.w ? 1 : 0) + joystickY;
-  direction.x = (keys.d ? 1 : 0) - (keys.a ? 1 : 0) + joystickX;
+  if (playerMovementEnabled) {
+    direction.z = (keys.s ? 1 : 0) - (keys.w ? 1 : 0) + joystickY;
+    direction.x = (keys.d ? 1 : 0) - (keys.a ? 1 : 0) + joystickX;
+  }
 
   const inputStrength = Math.min(direction.length(), 1);
   if (inputStrength >= 0.12) {
@@ -350,6 +381,7 @@ export function updateControls(deltaTime = 1 / 60) {
 
 export function setPlayerControlsEnabled(enabled) {
   playerControlsEnabled = enabled;
+  playerMovementEnabled = enabled;
 
   if (!enabled) {
     Object.keys(keys).forEach((key) => {
@@ -363,6 +395,20 @@ export function setPlayerControlsEnabled(enabled) {
   }
 
   autoLookTarget = null;
+}
+
+export function setPlayerMovementEnabled(enabled) {
+  playerMovementEnabled = enabled;
+
+  if (!enabled) {
+    Object.keys(keys).forEach((key) => {
+      keys[key] = false;
+    });
+    joystickX = 0;
+    joystickY = 0;
+    jumpRequested = false;
+    resetTouchInput();
+  }
 }
 
 export function turnCameraToward(target) {

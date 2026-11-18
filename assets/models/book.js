@@ -264,6 +264,96 @@ function createRoundedCoverGeometry() {
   return geometry;
 }
 
+export function createSpellCasterModel() {
+  const group = new THREE.Group();
+  group.name = 'spellcaster-model';
+  group.position.set(0.72, -0.38, -1.05);
+  group.rotation.set(-0.08, -0.12, 0);
+  group.scale.setScalar(0.82);
+  group.visible = false;
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.78, 0.12),
+    new THREE.MeshStandardMaterial({
+      color: 0x302f67,
+      roughness: 0.42,
+      metalness: 0.18
+    })
+  );
+  body.name = 'spellcaster-body';
+  body.position.z = -0.03;
+  group.add(body);
+
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.52, 0.68),
+    new THREE.MeshBasicMaterial({
+      color: 0x17162d,
+      transparent: true,
+      opacity: 0.96,
+      side: THREE.DoubleSide
+    })
+  );
+  screen.position.z = 0.035;
+  group.add(screen);
+
+  let letters = [];
+  const keyGroup = new THREE.Group();
+  keyGroup.name = 'spellcaster-keys';
+  group.add(keyGroup);
+
+  function rebuildKeys(nextLetters) {
+    letters = [...new Set(nextLetters.map((letter) => String(letter).trim().toUpperCase()).filter(Boolean))];
+    for (const child of [...keyGroup.children]) {
+      keyGroup.remove(child);
+      if (child.material) {
+        child.material.dispose();
+        if (child.material.map) child.material.map.dispose();
+      }
+      if (child.geometry) child.geometry.dispose();
+    }
+
+    letters.slice(0, 12).forEach((letter, index) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#c9b66b';
+      context.fillRect(8, 8, 112, 112);
+      context.strokeStyle = '#fff6dc';
+      context.lineWidth = 5;
+      context.strokeRect(14, 14, 100, 100);
+      context.fillStyle = '#202038';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.font = 'bold 72px Arial';
+      context.fillText(letter, 64, 68);
+
+      const texture = createCanvasTexture(canvas);
+      const key = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.12, 0.12),
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide
+        })
+      );
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      key.position.set(-0.19 + column * 0.19, 0.18 - row * 0.19, 0.045);
+      key.userData.spellCasterLetter = letter;
+      keyGroup.add(key);
+    });
+  }
+
+  rebuildKeys([]);
+
+  return {
+    group,
+    keyMeshes: keyGroup,
+    updateLetters: rebuildKeys
+  };
+}
+
 export function createInventoryBook() {
   const group = new THREE.Group();
   group.name = 'inventory-book';
@@ -282,6 +372,9 @@ export function createInventoryBook() {
   acquisitionEffects.position.set(0, 0, -0.9);
   acquisitionEffects.scale.setScalar(1.2);
   acquisitionEffects.visible = false;
+  const inventoryCards = new THREE.Group();
+  inventoryCards.name = 'inventory-floating-cards';
+  group.add(inventoryCards);
 
   const edgeMaterial = new THREE.MeshBasicMaterial({ color: 0x003aac });
   const coverMaterial = new THREE.MeshBasicMaterial({ color: 0x003aac });
@@ -326,6 +419,7 @@ export function createInventoryBook() {
   pageTurnPivot.add(pageTurnMesh);
   const floatingTextGeometry = new THREE.PlaneGeometry(0.52, 0.74);
   const acquisitionCardGeometry = new THREE.PlaneGeometry(0.36, 0.48);
+  const inventoryCardGeometry = new THREE.PlaneGeometry(0.23, 0.3);
   const acquisitionHaloGeometry = new THREE.RingGeometry(0.2, 0.23, 48);
   const leftFloatingText = new THREE.Mesh(floatingTextGeometry, leftTextMaterial);
   const rightFloatingText = new THREE.Mesh(floatingTextGeometry, rightTextMaterial);
@@ -394,6 +488,7 @@ export function createInventoryBook() {
   let pageTurn = null;
   const acquisitionCardQueue = [];
   let activeAcquisitionCard = null;
+  let inventoryCardTime = 0;
   const sectionDefinitions = [
     {
       id: 'letters',
@@ -429,6 +524,7 @@ export function createInventoryBook() {
     rightTextMaterial.needsUpdate = true;
     replaceNumberTexture(leftPageNumberMaterial, firstVisiblePage);
     replaceNumberTexture(rightPageNumberMaterial, firstVisiblePage + 1);
+    updateInventoryCards();
   }
 
   function createPageTexture(pageNumber) {
@@ -445,14 +541,90 @@ export function createInventoryBook() {
         : createFloatingTextTexture([]);
     }
 
-    const firstEntryIndex = (pageNumber - section.startPage) * ITEMS_PER_PAGE;
-    return createFloatingTextTexture(
-      section.entries.slice(firstEntryIndex, firstEntryIndex + ITEMS_PER_PAGE)
+    return createFloatingTextTexture([]);
+  }
+
+  function getEntryLabel(entry) {
+    if (typeof entry === 'string' || typeof entry === 'number') {
+      return String(entry);
+    }
+    if (!entry || typeof entry !== 'object') return 'Nova descoberta';
+    return String(
+      entry.name || entry.label || entry.word || entry.letter || entry.id ||
+      'Nova descoberta'
     );
+  }
+
+  function updateInventoryCards() {
+    for (const card of [...inventoryCards.children]) {
+      inventoryCards.remove(card);
+      card.material.map.dispose();
+      card.material.dispose();
+    }
+
+    for (const side of ['left', 'right']) {
+      const pageNumber = firstVisiblePage + (side === 'right' ? 1 : 0);
+      const section = sections.find(
+        (entry) => pageNumber >= entry.startPage && pageNumber <= entry.endPage
+      );
+      if (!section || section.entries.length === 0) continue;
+
+      const firstEntryIndex = (pageNumber - section.startPage) * ITEMS_PER_PAGE;
+      const pageEntries = section.entries.slice(
+        firstEntryIndex,
+        firstEntryIndex + ITEMS_PER_PAGE
+      );
+      const pageCenterX = side === 'left' ? -0.285 : 0.285;
+      pageEntries.forEach((entry, index) => {
+        const texture = createAcquisitionCardTexture({
+          type: section.id === 'letters'
+            ? 'letter'
+            : section.id === 'words'
+              ? 'word'
+              : 'item',
+          entry
+        });
+        const card = new THREE.Mesh(
+          inventoryCardGeometry,
+          new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          })
+        );
+        const column = index % 2;
+        const row = Math.floor(index / 2);
+        const baseY = row === 0 ? 0.17 : -0.17;
+        card.position.set(
+          pageCenterX + (column === 0 ? -0.13 : 0.13),
+          baseY,
+          0.12
+        );
+        card.renderOrder = 4;
+        card.userData.baseY = baseY;
+        card.userData.inventoryEntry = {
+          sectionId: section.id,
+          label: getEntryLabel(entry)
+        };
+        inventoryCards.add(card);
+      });
+    }
+  }
+
+  function updateFloatingInventoryCards(deltaTime) {
+    inventoryCardTime += deltaTime;
+    for (const [index, card] of inventoryCards.children.entries()) {
+      const phase = index * 0.8;
+      card.position.y = card.userData.baseY +
+        Math.sin(inventoryCardTime * 2 + phase) * 0.006;
+      card.rotation.z = Math.sin(inventoryCardTime * 1.5 + phase) * 0.012;
+    }
   }
 
   function setOpenProgress(progress) {
     openProgress = Math.max(0, Math.min(1, progress));
+    inventoryCards.visible = openProgress === 1 && !pageTurn;
     const entranceProgress = Math.min(openProgress / openingPhaseStart, 1);
     const openingProgress = Math.max(
       0,
@@ -476,7 +648,7 @@ export function createInventoryBook() {
     let nextPage = TABLE_OF_CONTENTS_PAGE_COUNT + 1;
     sections = sectionDefinitions.map((definition) => {
       const entries = Array.isArray(content && content[definition.id])
-        ? content[definition.id].map(String)
+        ? [...content[definition.id]]
         : [];
       let pageCount = Math.max(2, Math.ceil(entries.length / ITEMS_PER_PAGE));
       if (pageCount % 2 !== 0) pageCount++;
@@ -526,6 +698,7 @@ export function createInventoryBook() {
     }
 
     pageTurn = { direction, elapsed: 0 };
+    inventoryCards.visible = false;
     pageTurnPivot.position.set(0, 0., 0.04);
     pageTurnPivot.rotation.y = 0;
     pageTurnMesh.position.x = direction > 0 ? 0.3 : -0.28;
@@ -534,6 +707,7 @@ export function createInventoryBook() {
   }
 
   function updatePageTurn(deltaTime) {
+    updateFloatingInventoryCards(deltaTime);
     if (!pageTurn) return;
 
     pageTurn.elapsed = Math.min(pageTurn.elapsed + deltaTime, pageTurnDuration);
@@ -550,6 +724,7 @@ export function createInventoryBook() {
       pageTurnPivot.visible = false;
       pageTurn = null;
       updateVisiblePages();
+      inventoryCards.visible = true;
       leftPageNumber.visible = true;
       rightPageNumber.visible = true;
       leftFloatingText.visible = true;
@@ -653,6 +828,7 @@ export function createInventoryBook() {
     acquisitionEffects,
     pages: { left: leftPage, right: rightPage },
     textPages: { left: leftFloatingText, right: rightFloatingText },
+    inventoryCards,
     setOpenProgress,
     updateInventory,
     getContentsDestination,

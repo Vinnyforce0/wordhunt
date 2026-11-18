@@ -6,16 +6,19 @@ import {
   lookDownForInventory,
   restoreCameraView,
   setPlayerControlsEnabled,
+  setPlayerMovementEnabled,
   setupControls,
   turnCameraToward,
   updateControls
 } from './js/controls.js';
 import { createInteractiveWorld } from './js/interactive.js';
-import { createInventoryBook } from './assets/models/book.js';
+import { createInventoryBook, createSpellCasterModel } from './assets/models/book.js';
 import {
+  addAcquiredLetter,
   addInventoryItem,
   DEFAULT_ENVIRONMENT_ID,
   getNpcDialogueState,
+  hasInventoryItem,
   onPlayerAcquisition,
   playerState,
   recordNpcDialogue,
@@ -93,10 +96,12 @@ const world = {
 // configura controles
 setupControls(camera, world);
 const inventoryBook = createInventoryBook();
+const spellCasterModel = createSpellCasterModel();
 camera.add(
   inventoryBook.group,
   inventoryBook.floatingPageNumbers,
-  inventoryBook.acquisitionEffects
+  inventoryBook.acquisitionEffects,
+  spellCasterModel.group
 );
 
 // overlay (tela inicial)
@@ -140,7 +145,160 @@ const pagePointer = new THREE.Vector2();
 
 onPlayerAcquisition(({ type, entry }) => {
   inventoryBook.showAcquisitionCard({ type, entry });
+  updateSpellCasterInterface();
 });
+
+const spellCasterButton = document.getElementById("spellcaster-button");
+const spellCasterPanel = document.getElementById("spellcaster-panel");
+const spellCasterWord = document.getElementById("spellcaster-word");
+const spellCasterKeys = document.getElementById("spellcaster-keys");
+const spellCasterBackspace = document.getElementById("spellcaster-backspace");
+const spellCasterCast = document.getElementById("spellcaster-cast");
+const spellCasterInventory = document.getElementById("spellcaster-inventory");
+const spellCasterClose = document.getElementById("spellcaster-close");
+const spellCasterStatus = document.getElementById("spellcaster-status");
+let spellCasterOpen = false;
+let spellCasterEquipped = false;
+let typedSpellWord = "";
+let spellStatusTimer = null;
+
+function getAcquiredLetterValues() {
+  return playerState.acquiredLetters.map((letter) => {
+    if (typeof letter === "string" || typeof letter === "number") return String(letter);
+    return String(letter.name || letter.label || letter.word || letter.letter || letter.id || "");
+  });
+}
+
+function getDiscoveredWordValues() {
+  return playerState.discoveredWords.map((word) => {
+    if (typeof word === "string" || typeof word === "number") return String(word);
+    return String(word.name || word.label || word.word || word.id || "");
+  });
+}
+
+function updateSpellCasterInterface() {
+  const acquired = hasInventoryItem("spellcaster");
+  spellCasterButton.hidden =
+    !acquired || !spellCasterEquipped || inventoryOpen || !overlay.hidden;
+  spellCasterModel.group.visible =
+    acquired && spellCasterEquipped && spellCasterOpen;
+  touchControls.classList.toggle(
+    "spellcaster-active",
+    acquired && spellCasterEquipped && spellCasterOpen
+  );
+  if (!acquired || !spellCasterEquipped) {
+    closeSpellCaster();
+  }
+
+  const letters = getAcquiredLetterValues();
+  spellCasterModel.updateLetters(letters);
+  spellCasterKeys.replaceChildren();
+  [...new Set(letters.map((letter) => letter.trim().toUpperCase()).filter(Boolean))]
+    .slice(0, 12)
+    .forEach((letter) => {
+      const key = document.createElement("button");
+      key.type = "button";
+      key.textContent = letter;
+      key.setAttribute("aria-label", `Adicionar letra ${letter}`);
+      key.addEventListener("click", () => appendSpellLetter(letter));
+      spellCasterKeys.appendChild(key);
+    });
+
+  spellCasterWord.textContent = typedSpellWord;
+}
+
+function openSpellCaster() {
+  if (!hasInventoryItem("spellcaster") || !spellCasterEquipped || inventoryOpen) return;
+  typedSpellWord = "";
+  spellCasterOpen = true;
+  spellCasterPanel.hidden = false;
+  spellCasterButton.setAttribute("aria-expanded", "true");
+  spellCasterButton.textContent = "Guardar SpellCaster";
+  setPlayerMovementEnabled(false);
+  updateSpellCasterInterface();
+  showSpellCasterStatus("Escolha letras e conjure uma palavra.");
+}
+
+function closeSpellCaster() {
+  spellCasterOpen = false;
+  spellCasterPanel.hidden = true;
+  spellCasterButton.setAttribute("aria-expanded", "false");
+  spellCasterButton.textContent = "SpellCaster";
+  typedSpellWord = "";
+  spellCasterWord.textContent = "";
+  spellCasterModel.group.visible = false;
+  touchControls.classList.remove("spellcaster-active");
+  if (overlay.hidden && !inventoryOpen && !activeNpc) {
+    setPlayerMovementEnabled(true);
+  }
+}
+
+function toggleSpellCasterEquipment() {
+  if (!hasInventoryItem("spellcaster")) return;
+  spellCasterEquipped = !spellCasterEquipped;
+  if (!spellCasterEquipped) closeSpellCaster();
+  updateSpellCasterInterface();
+  showSpellCasterStatus(
+    spellCasterEquipped ? "SpellCaster equipado." : "SpellCaster desequipado."
+  );
+}
+
+function appendSpellLetter(letter) {
+  typedSpellWord = (typedSpellWord + String(letter).trim().toUpperCase()).slice(0, 20);
+  spellCasterWord.textContent = typedSpellWord;
+}
+
+function showSpellCasterStatus(message) {
+  if (spellStatusTimer !== null) window.clearTimeout(spellStatusTimer);
+  spellCasterStatus.textContent = message;
+  spellCasterStatus.classList.add("is-visible");
+  spellStatusTimer = window.setTimeout(() => {
+    spellCasterStatus.classList.remove("is-visible");
+  }, 2400);
+}
+
+function castFireEffect() {
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.22, 1.1, 12),
+    new THREE.MeshBasicMaterial({
+      color: 0xff5a16,
+      transparent: true,
+      opacity: 0.82,
+      depthWrite: false
+    })
+  );
+  flame.position.copy(camera.position).add(direction.multiplyScalar(1.2));
+  flame.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.clone().normalize()
+  );
+  flame.userData.life = 0.65;
+  scene.add(flame);
+  const flameLight = new THREE.PointLight(0xff7a24, 2.4, 4);
+  flameLight.position.copy(flame.position);
+  scene.add(flameLight);
+  flame.userData.light = flameLight;
+}
+
+function castSpellWord() {
+  const word = typedSpellWord.trim().toUpperCase();
+  if (!word) return;
+
+  const discovered = getDiscoveredWordValues()
+    .map((entry) => entry.trim().toUpperCase());
+  if (!discovered.includes(word)) {
+    showSpellCasterStatus("palavra desconhecida");
+    return;
+  }
+
+  showSpellCasterStatus(`Palavra conjurada: ${word}`);
+  recordPlayerAction("cast_spell", { word });
+  if (word === "FIRE") castFireEffect();
+  typedSpellWord = "";
+  spellCasterWord.textContent = "";
+}
 
 // ===============================
 // 🖱️ INICIAR JOGO AO CLICAR
@@ -186,6 +344,21 @@ debugButton.addEventListener("click", () => {
   debugButton.setAttribute("aria-expanded", String(!debugHud.hidden));
 });
 
+spellCasterButton.addEventListener("click", () => {
+  if (spellCasterOpen) closeSpellCaster();
+  else openSpellCaster();
+});
+spellCasterClose.addEventListener("click", closeSpellCaster);
+spellCasterBackspace.addEventListener("click", () => {
+  typedSpellWord = typedSpellWord.slice(0, -1);
+  spellCasterWord.textContent = typedSpellWord;
+});
+spellCasterCast.addEventListener("click", castSpellWord);
+spellCasterInventory.addEventListener("click", () => {
+  closeSpellCaster();
+  toggleInventory();
+});
+
 interactButton.addEventListener("click", interactWithNearbyNpc);
 inventoryButton.addEventListener("click", toggleInventory);
 renderer.domElement.addEventListener("pointerdown", (event) => {
@@ -214,6 +387,21 @@ renderer.domElement.addEventListener("pointerdown", (event) => {
     }
   }
 
+  const cardHit = inventoryBook.inventoryCards.visible
+    ? pageRaycaster.intersectObjects(inventoryBook.inventoryCards.children, false)[0]
+    : null;
+  if (cardHit) {
+    const inventoryEntry = cardHit.object.userData.inventoryEntry;
+    if (
+      inventoryEntry?.sectionId === "items" &&
+      inventoryEntry.label.trim().toLowerCase() === "spellcaster"
+    ) {
+      toggleSpellCasterEquipment();
+    }
+    event.preventDefault();
+    return;
+  }
+
   const hit = pageRaycaster.intersectObjects(
     [inventoryBook.pages.left, inventoryBook.pages.right],
     false
@@ -224,7 +412,50 @@ renderer.domElement.addEventListener("pointerdown", (event) => {
   if (inventoryBook.turnPage(direction)) event.preventDefault();
 });
 
+renderer.domElement.addEventListener("pointerdown", (event) => {
+  if (!spellCasterOpen || event.button !== 0) return;
+  const bounds = renderer.domElement.getBoundingClientRect();
+  pagePointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+  pagePointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+  pageRaycaster.setFromCamera(pagePointer, camera);
+  const keyHit = pageRaycaster.intersectObject(
+    spellCasterModel.keyMeshes,
+    true
+  )[0];
+  if (keyHit?.object.userData.spellCasterLetter) {
+    appendSpellLetter(keyHit.object.userData.spellCasterLetter);
+  }
+});
+
 document.addEventListener("keydown", (event) => {
+  if (event.code === "KeyT" && !event.repeat && overlay.hidden) {
+    event.preventDefault();
+    if (spellCasterOpen) closeSpellCaster();
+    else openSpellCaster();
+    return;
+  }
+
+  if (spellCasterOpen && /^[a-zA-Z]$/.test(event.key) && !event.repeat) {
+    const letter = event.key.toUpperCase();
+    if (getAcquiredLetterValues().some((value) => value.toUpperCase() === letter)) {
+      appendSpellLetter(letter);
+    }
+    return;
+  }
+
+  if (spellCasterOpen && event.code === "Backspace") {
+    event.preventDefault();
+    typedSpellWord = typedSpellWord.slice(0, -1);
+    spellCasterWord.textContent = typedSpellWord;
+    return;
+  }
+
+  if (spellCasterOpen && event.code === "Enter") {
+    event.preventDefault();
+    castSpellWord();
+    return;
+  }
+
   if (event.code === "KeyI" && !event.repeat && overlay.hidden) {
     event.preventDefault();
     toggleInventory();
@@ -234,6 +465,12 @@ document.addEventListener("keydown", (event) => {
   if (event.code === "Escape" && inventoryOpen) {
     event.preventDefault();
     closeInventory();
+    return;
+  }
+
+  if (event.code === "Escape" && spellCasterOpen) {
+    event.preventDefault();
+    closeSpellCaster();
     return;
   }
 
@@ -247,6 +484,21 @@ document.addEventListener("keydown", (event) => {
 // ===============================
 
 let previousFrameTime = 0;
+function updateSpellEffects(deltaTime) {
+  for (const object of [...scene.children]) {
+    if (typeof object.userData.life !== "number") continue;
+    object.userData.life -= deltaTime;
+    object.scale.setScalar(Math.max(0.05, object.userData.life / 0.65));
+    if (object.material) object.material.opacity = Math.max(0, object.userData.life / 0.65);
+    if (object.userData.light) object.userData.light.intensity = object.userData.life * 3.7;
+    if (object.userData.life <= 0) {
+      if (object.userData.light) scene.remove(object.userData.light);
+      scene.remove(object);
+      object.geometry?.dispose();
+      object.material?.dispose();
+    }
+  }
+}
 function animate(timestamp) {
   requestAnimationFrame(animate);
 
@@ -268,6 +520,7 @@ function animate(timestamp) {
       world.update(deltaTime);
       updateInteractionButton();
       updateDebugHud();
+      updateSpellEffects(deltaTime);
     }
     updateInventoryBook(deltaTime);
   }
@@ -282,7 +535,8 @@ function updateInteractionButton() {
   interactButton.hidden =
     (activeNpcDialogueState && activeNpcDialogueState.phase === "turning") ||
     (!nearbyNpc && !nearbyArea);
-  inventoryButton.hidden = Boolean(nearbyNpc || nearbyArea);
+  inventoryButton.hidden =
+    !inventoryOpen && (spellCasterOpen || Boolean(nearbyNpc || nearbyArea));
   debugNpcId.textContent = nearbyNpc ? String(nearbyNpc.id) : "Nenhum";
 }
 
@@ -379,6 +633,13 @@ function showNextNpcDialogue() {
     activeNpcDialogues[activeNpcDialogueState.nextDialogueIndex]
   );
   activeNpcDialogueState.nextDialogueIndex++;
+  if (
+    activeNpc.id === "npc-1" &&
+    hasInventoryItem("spellcaster") &&
+    dialogue.trim() === "A."
+  ) {
+    addAcquiredLetter("A");
+  }
   showDialogueText(activeNpc, dialogue, "npc");
 }
 
@@ -434,6 +695,7 @@ function closeNpcConversation() {
   dialogueBubble.setAttribute("aria-hidden", "true");
   touchControls.classList.remove("conversation-active");
   setPlayerControlsEnabled(true);
+  setPlayerMovementEnabled(!spellCasterOpen);
   activeNpc = null;
   activeNpcDialogueState = null;
   activeNpcDialogues = [];
@@ -456,7 +718,7 @@ function toggleInventory() {
   }
   if (!overlay.hidden || activeNpc) return;
 
-  const formatEntries = (entries) => entries.map((item, index) => {
+  const formatEntry = (item, index) => {
     if (typeof item === "string" || typeof item === "number") {
       return String(item);
     }
@@ -465,19 +727,21 @@ function toggleInventory() {
       if (label !== undefined) return String(label);
     }
     return `Item ${index + 1}`;
-  });
-  const sections = {
-    letters: formatEntries(playerState.acquiredLetters),
-    words: formatEntries(playerState.discoveredWords),
-    items: formatEntries(playerState.inventory)
   };
-  const entries = Object.values(sections).flat();
+  const sections = {
+    letters: [...playerState.acquiredLetters],
+    words: [...playerState.discoveredWords],
+    items: [...playerState.inventory]
+  };
+  const entries = Object.values(sections).flat().map(formatEntry);
 
   inventoryBook.updateInventory(sections);
   inventoryStatus.textContent = entries.length
     ? `Inventário aberto. ${entries.length} registro(s): ${entries.join(", ")}`
     : "Inventário aberto.";
   inventoryOpen = true;
+  if (spellCasterOpen) closeSpellCaster();
+  spellCasterButton.hidden = true;
   inventoryButton.disabled = false;
   inventoryButton.textContent = "Fechar livro";
   inventoryButton.setAttribute("aria-label", "Fechar inventário");
@@ -487,6 +751,7 @@ function toggleInventory() {
   inventoryBookProgress = 0;
   inventoryBook.setOpenProgress(inventoryBookProgress);
   touchControls.classList.add("inventory-active");
+  updateSpellCasterInterface();
   setPlayerControlsEnabled(false);
   if (document.pointerLockElement) document.exitPointerLock();
   lookDownForInventory();
@@ -539,7 +804,9 @@ function updateInventoryBook(deltaTime) {
     inventoryButton.setAttribute("aria-label", "Abrir inventário");
     touchControls.classList.remove("inventory-active");
     setPlayerControlsEnabled(true);
+    setPlayerMovementEnabled(!spellCasterOpen);
     inventoryStatus.textContent = "Inventário fechado.";
+    updateSpellCasterInterface();
   }
 }
 

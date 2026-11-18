@@ -58,6 +58,20 @@
         </div>
     </div>
     <div id="inventory-status" class="visually-hidden" role="status" aria-live="polite"></div>
+    <button id="spellcaster-button" type="button" aria-controls="spellcaster-panel" aria-expanded="false" hidden>
+        SpellCaster
+    </button>
+    <div id="spellcaster-panel" aria-label="Teclado do SpellCaster" hidden>
+        <div id="spellcaster-word" aria-live="polite"></div>
+        <div id="spellcaster-keys"></div>
+        <div class="spellcaster-actions">
+            <button id="spellcaster-backspace" type="button">Apagar</button>
+            <button id="spellcaster-cast" type="button">Conjurar</button>
+            <button id="spellcaster-inventory" type="button">Inventário</button>
+            <button id="spellcaster-close" type="button">Fechar</button>
+        </div>
+    </div>
+    <div id="spellcaster-status" role="status" aria-live="polite"></div>
     <div id="touch-controls" hidden>
         <div id="look-zone" role="group" aria-label="Área para controlar a câmera">
         </div>

@@ -24,6 +24,21 @@ REQUISITOS FUTUROS
 - No livro, substituir a entrada de texto simples do SpellCaster (por exemplo, ". spellcaster") por um card flutuante semelhante ao card exibido ao adquirir um item. O card pode flutuar dentro ou fora do livro.
 - Aplicar a mesma apresentação em cards flutuantes às letras, palavras e aos demais itens que forem adicionados futuramente.
 
+CONTEXTO TÉCNICO ATUAL
+
+- O estado do jogador fica em `js/player.js`. Use `addInventoryItem`, `addAcquiredLetter` e `addDiscoveredWord` para registrar aquisições e disparar o card 3D; aquisições duplicadas são ignoradas.
+- O card 3D é controlado por `showAcquisitionCard` em `assets/models/book.js`, aparece imediatamente sem banner e parte da posição do livro. Preservar seu tamanho e posição atuais: geometria 0.36 × 0.48, textura em escala 3× e destino vertical `visiblePositionY + 0.05`.
+- O sumário do livro ocupa duas páginas: página 1 com o título "Sumário"; página 2 com links clicáveis para letras, palavras e itens. As seções são calculadas dinamicamente a partir da página 3, com quatro entradas por página. O nome atual da seção de palavras é "Palavras achadas".
+- Variantes de diálogo são configuradas em `dialogueVariants` nas definições de NPC em `js/interactive.js` e selecionadas por `selectNpcDialogues` em `js/player.js`; as condições suportam itens, progresso, momento da história, número da conversa e prioridade.
+- B concede o SpellCaster ao concluir a primeira conversa.
+- "Equipar" significa ativar o SpellCaster ao clicar nele na seção de itens do inventário. Equipado, mas guardado, o SpellCaster fica invisível na mão e permite movimentação normal. Ao ativá-lo na mão pelo botão do HUD, o modelo aparece, a movimentação e o pulo são bloqueados, mas o jogador ainda pode girar a câmera. O botão de inventário fica disponível como ação para fechar o livro enquanto ele está aberto.
+- A letra A só é adquirida quando o jogador já possui o SpellCaster e vê a fala "A." na variante de diálogo de A. B não concede letras nem palavras.
+
 REGISTRO DE ALTERAÇÕES
 
 2026-11-18 — Reorganizado o sumário: a página 1 exibe o título e a página 2 reúne links clicáveis para letras, palavras e itens; as seções agora começam na página 3. Versão do app: 1.2.42.
+2026-11-18 — Corrigida a acentuação na fala condicional de A e documentados os pontos técnicos atuais para continuidade dos próximos requisitos. Versão do app: 1.2.43.
+2026-11-18 — Implementado o SpellCaster utilizável com modelo 3D, teclado limitado às letras adquiridas, validação de palavras descobertas e conjuração visual de FIRE. Revisados diálogos e acentuação afetados pelas novas aquisições. Versão do app: 1.2.44.
+2026-11-18 — Adicionado equipar/desequipar SpellCaster pelo item no inventário; controles de toque são ocultados enquanto equipado, com o botão de inventário disponível como ação para fechar o livro. Removidas aquisições automáticas de FIRE e F/I/R/E; A passa a conceder A apenas em sua fala após obter o SpellCaster. Versão do app: 1.2.45.
+2026-11-18 — Substituída a listagem textual de letras, palavras e itens do inventário por cards 3D flutuantes com apresentação visual de aquisição. O SpellCaster é equipado/desequipado ao clicar em seu card. Versão do app: 1.2.46.
+2026-11-18 — Separados os estados de SpellCaster equipado e ativo na mão: equipado e guardado permite movimento com o modelo invisível; ativado na mão bloqueia movimento, mas preserva o controle da câmera. Versão do app: 1.2.47.
